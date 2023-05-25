@@ -1,0 +1,88 @@
+﻿@{
+    Layout = "_ConfigurePlugin";
+}
+@model Shipping.SendCloud.Models.ConfigurationModel
+@await Component.InvokeAsync("StoreScope")
+<form asp-controller="WidgetsSendCloud" asp-action="Configure" method="post">
+    <div class="form-horizonal">
+        <div class="form-body">
+            <div class="form-group">
+                <div class="note note-info">
+                    <p>
+                        You can configure SendCloud Api shipment
+                    </p>
+                    <ul>
+                        <li>1. Provide ClientId.</li>
+                        <li>2. Provide  Client Secret</li>
+                        <li>3. Provide SendCloud Url(API)</li>
+                        <li>4. Enabled Pickup</li>
+                        <li>5. Carrier</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-4 col-sm-4 text-right">
+                    <admin-label asp-for="ClientId" class="control-label" />
+                </div>
+                <div class="col-md-8 col-sm-8">
+                    <admin-input asp-for="ClientId" />
+                    <span asp-validation-for="ClientId"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-4 col-sm-4 text-right">
+                    <admin-label asp-for="ClientSecret" class="control-label" />
+                </div>
+                <div class="col-md-8 col-sm-8">
+                    <admin-input asp-for="ClientSecret"></admin-input>
+                    <span asp-validation-for="ClientSecret"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-4 col-sm-4 text-right">
+                    <admin-label asp-for="SendCloudUrl" class="control-label" />
+                </div>
+                <div class="col-md-8 col-sm-8">
+                    <admin-input asp-for="SendCloudUrl"></admin-input>
+                    <span asp-validation-for="SendCloudUrl"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-4 col-sm-4 text-right">
+                    <admin-label asp-for="ServiceName" class="control-label" />
+                </div>
+                <div class="col-md-8 col-sm-8">
+                    <admin-input asp-for="ServiceName"></admin-input>
+                    <span asp-validation-for="ServiceName"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-4 col-sm-4 text-right">
+                    <admin-label asp-for="EnablePickup" class="control-label" />
+                </div>
+                <div class="col-md-8 col-sm-8">
+                    <label class="mt-checkbox mt-checkbox-outline control control-checkbox">
+                        <admin-input asp-for="EnablePickup" />
+                        <div class="control__indicator"></div>
+                    </label>
+                    <span asp-validation-for="EnablePickup"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-4 col-sm-4 text-right">
+                    <admin-label asp-for="Carrier" class="control-label" />
+                </div>
+                <div class="col-md-8 col-sm-8">
+                    @*<admin-input asp-for="Carrier"></admin-input>*@
+                    <admin-select asp-for="Carrier" asp-items="Model.CarrierList" />
+                    <span asp-validation-for="Carrier"></span>
+                </div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <div class="offset-md-3 offset-sm-3 col-md-9 col-sm-9">
+                <input type="submit" name="save" class="btn green" value="@Loc["Admin.Common.Save"]" />
+            </div>
+        </div>
+    </div>
+</form>
