@@ -14,8 +14,10 @@ namespace Shipping.SendCloud
         public string Carrier { get; set; }
         public bool EnablePickup { get; set; }
         public bool AllowToDisable { get; set; }
+        public bool EnableServicePoint { get; set; }
         public string ServiceName { get; set; }
         public int DisplayOrder { get;  set; }
         public IList<SelectListItem> CarrierList { get; set; }
+        public string ServicePointCloudUrl { get;  set; }
     }
 }

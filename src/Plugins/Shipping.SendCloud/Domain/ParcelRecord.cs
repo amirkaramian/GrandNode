@@ -12,8 +12,7 @@ namespace Shipping.SendCloud.Domain
     }
     public class Parcel
     {
-        internal int? to_service_point;
-
+        public int? to_service_point { get; set; }
         public string name { get; set; }
         public string company_name { get; set; }
         public string email { get; set; }

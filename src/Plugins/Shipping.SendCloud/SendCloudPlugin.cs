@@ -35,11 +35,15 @@ namespace Shipping.SendCloud
             var settings = new SendCloudSettings {
                 ClientId = "",
                 ClientSecret = "",
-                SendCloudUrl = "",
+                SendCloudUrl = "https://panel.sendcloud.sc/api/v2/",
+                ServicePointCloudUrl = "https://servicepoints.sendcloud.sc/api/v2/",
+                EnableServicePoint = false,
+                ServiceName = "Shipping.SendCloud",
                 CarrierList = new List<SelectListItem>() {
                      new SelectListItem(){Text="dhl",Value="1"},
-                     new SelectListItem(){Text="aspost",Value="2"}
-                }
+                     new SelectListItem(){Text="postat",Value="2"}
+                },
+                Carrier = "postat",
 
             };
             await _settingService.SaveSetting(settings);
@@ -59,7 +63,10 @@ namespace Shipping.SendCloud
             await this.AddOrUpdatePluginTranslateResource(_translationService, _languageService, "Shipping.SendCloud.ServiceName.Hint", "Get or set the value to consent cookie name");
             await this.AddOrUpdatePluginTranslateResource(_translationService, _languageService, "Shipping.SendCloud.Carrier", "Consent Carrier description");
             await this.AddOrUpdatePluginTranslateResource(_translationService, _languageService, "Shipping.SendCloud.Carrier.Hint", "Get or set the value to consent Carrier");
-
+            await this.AddOrUpdatePluginTranslateResource(_translationService, _languageService, "Shipping.SendCloud.ServicePointCloudUrl", "Service Point Cloud Url");
+            await this.AddOrUpdatePluginTranslateResource(_translationService, _languageService, "Shipping.SendCloud.ServicePointCloudUrl.Hint", "Service Point Cloud Url");
+            await this.AddOrUpdatePluginTranslateResource(_translationService, _languageService, "Shipping.SendCloud.EnableServicePoint", "Enable Service Point");
+            await this.AddOrUpdatePluginTranslateResource(_translationService, _languageService, "Shipping.SendCloud.EnableServicePoint.Hint", "Get or set Enable Service Point");
             await base.Install();
         }
 
@@ -88,7 +95,10 @@ namespace Shipping.SendCloud
             await this.DeletePluginTranslationResource(_translationService, _languageService, "Shipping.SendCloud.ServiceName.Hint");
             await this.DeletePluginTranslationResource(_translationService, _languageService, "Shipping.SendCloud.Carrier");
             await this.DeletePluginTranslationResource(_translationService, _languageService, "Shipping.SendCloud.Carrier.Hint");
-
+            await this.DeletePluginTranslationResource(_translationService, _languageService, "Shipping.SendCloud.ServicePointCloudUrl");
+            await this.DeletePluginTranslationResource(_translationService, _languageService, "Shipping.SendCloud.ServicePointCloudUrl.Hint");
+            await this.DeletePluginTranslationResource(_translationService, _languageService, "Shipping.SendCloud.EnableServicePoint");
+            await this.DeletePluginTranslationResource(_translationService, _languageService, "Shipping.SendCloud.EnableServicePoint.Hint");
             await base.Uninstall();
         }
 

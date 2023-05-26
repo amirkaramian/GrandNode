@@ -85,7 +85,7 @@ namespace Shipping.SendCloud.Components
                     var model = JsonConvert.DeserializeObject<ShipmentModel>(JsonConvert.SerializeObject(additionalData));
                     if (model != null)
                     {
-                        return View("Default", "");// CreateShippingScript(model));
+                        return View("Default", "");
                     }
                 }
                 if (widgetZone == SendCloudDefaults.ShipingMethod)
@@ -93,7 +93,7 @@ namespace Shipping.SendCloud.Components
                     var orderId = additionalData as string;
                     if (!string.IsNullOrEmpty(orderId))
                     {
-                        return View("Default", await GetOrderScript(orderId));
+                        return View("Default", await ProcessOrder(orderId));
                     }
                 }
             }
@@ -120,7 +120,7 @@ namespace Shipping.SendCloud.Components
                $"                <a href=\"#\" class=\"btn blue\">\r\n          " +
                "                      <i class=\"fa fa-file-pdf-o\"></i> Print Lable\r\n                            </a>\r\n           ";
         }
-        private async Task<string> GetOrderScript(string orderId)
+        private async Task<string> ProcessOrder(string orderId)
         {
 
             var order = await _orderService.GetOrderById(orderId);
@@ -129,7 +129,8 @@ namespace Shipping.SendCloud.Components
                 var country = await _countryService.GetCountryById(_workContext.CurrentCustomer.ShippingAddress.CountryId);
                 string countryLetter = country.TwoLetterIsoCode;
                 var method = await _shippingSendCloudService.GetOrSet(0, order.ShippingMethod);
-
+                if (method == null || method.Id == "0")
+                    return "";
                 var parcel = await CreateParcel(order, countryLetter, int.Parse(method.Id));
 
                 var lable = await CreateLable(order, parcel.parcel.id, int.Parse(method.Id), order.ShippingMethod);
@@ -144,7 +145,7 @@ namespace Shipping.SendCloud.Components
         {
 
             var senderAddresses = await _shippingSendCloudService.GetSenderAddress();
-            ServicePoints points = await _shippingSendCloudService.GetServicePoint(countryLetter, _cloudSettings.Carrier);
+            var points = await _shippingSendCloudService.GetServicePoint(countryLetter, _cloudSettings.Carrier);
             var parcel = new Parcel() {
                 name = _workContext.CurrentCustomer.GetFullName(),
                 company_name = senderAddresses.sender_addresses.FirstOrDefault().company_name,
@@ -170,8 +171,8 @@ namespace Shipping.SendCloud.Components
                 apply_shipping_rules = false,
                 request_label_async = false
             };
-            if (points != null)
-                parcel.to_service_point = points.ServicePointList.FirstOrDefault(x => x.city == _workContext.CurrentCustomer.ShippingAddress.City)?.id;
+            if (points != null && _cloudSettings.EnableServicePoint)
+                parcel.to_service_point = points.FirstOrDefault(x => x.city == _workContext.CurrentCustomer.ShippingAddress.City)?.id;
             foreach (var item in order.OrderItems)
             {
                 var procuct = await _productService.GetProductById(item.ProductId);
@@ -265,8 +266,10 @@ namespace Shipping.SendCloud.Components
                 ClientId = settings.ClientId,
                 ClientSecret = settings.ClientSecret,
                 SendCloudUrl = settings.SendCloudUrl,
+                ServicePointCloudUrl = settings.ServicePointCloudUrl,
                 Carrier = settings.Carrier,
                 EnablePickup = settings.EnablePickup,
+                EnableServicePoint = settings.EnableServicePoint,
             };
         }
 

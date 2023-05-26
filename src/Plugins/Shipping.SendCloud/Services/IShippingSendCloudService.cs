@@ -22,7 +22,7 @@ namespace Shipping.SendCloud.Services
         Task<ParcelModelRoot> CreateLable(LableRecord model);
         Task<PickupRecord> CreatePickUpRequest(PickupRequestModel model);
         Task<ShippingSendCloudRecord> GetOrSet(int methodId, string methodName);
-        Task<ServicePoints> GetServicePoint(string countrCode, string carrier);
+        Task<List<ServicePoint>> GetServicePoint(string countrCode, string carrier);
         Task<string> GetLabel(string lableId);
         Task<ParcelModelRoot> GetParcel(string id);
     }

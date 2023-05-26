@@ -27,9 +27,11 @@ namespace Shipping.SendCloud.Models
         public string Carrier { get; set; }
         [GrandResourceDisplayName("Shipping.SendCloud.CarrierList")]
         public IList<SelectListItem> CarrierList { get; set; }
+        [GrandResourceDisplayName("Shipping.SendCloud.ServicePointCloudUrl")]
+        public string ServicePointCloudUrl { get;  set; }
 
 
-
-
+        [GrandResourceDisplayName("Shipping.SendCloud.EnableServicePoint")]
+        public bool EnableServicePoint { get; set; }  
     }
 }

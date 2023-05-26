@@ -52,7 +52,7 @@ namespace Shipping.SendCloud.Services
             _httpClient.BaseAddress = new Uri(_cloudSettings.SendCloudUrl);
             _httpClient.DefaultRequestHeaders.Add("Authorization", "Basic " + base64EncodedAuthenticationString);
             _httpClientServicePoint = httpClientFactory.CreateClient();
-            _httpClientServicePoint.BaseAddress = new Uri("https://servicepoints.sendcloud.sc/api/v2/");
+            _httpClientServicePoint.BaseAddress = new Uri(_cloudSettings.ServicePointCloudUrl);
             _httpClientServicePoint.DefaultRequestHeaders.Add("Authorization", "Basic " + base64EncodedAuthenticationString);
         }
 
@@ -187,9 +187,9 @@ namespace Shipping.SendCloud.Services
             return JsonConvert.DeserializeObject<SenderAddressModel>(json);
 
         }
-        public virtual async Task<ServicePoints> GetServicePoint(string countrCode, string carrier)
+        public virtual async Task<List<ServicePoint>> GetServicePoint(string countrCode, string carrier)
         {
-            var response = await _httpClientServicePoint.GetAsync($"service-points?country={countrCode}");
+            var response = await _httpClientServicePoint.GetAsync($"service-points/?country={countrCode}&carrier={carrier}");
             if (!response.IsSuccessStatusCode)
             {
                 var jsonError = await response.Content.ReadAsStringAsync();
@@ -199,12 +199,14 @@ namespace Shipping.SendCloud.Services
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<ServicePoints>(json);
+            return JsonConvert.DeserializeObject<List<ServicePoint>>(json);
         }
         public virtual async Task<ShippingMethodList> GetShippingMethods(ShippingMethodModel model)
         {
-
-            var response = await _httpClient.GetAsync($"shipping_methods?sender_address={model.SenderAddress}&to_country={model.ToCountry}&from_postal_code={model.FromPostal_code}&to_postal_code={model.ToPostal_code}");
+            var query = $"shipping_methods?sender_address={model.SenderAddress}&to_country={model.ToCountry}&from_postal_code={model.FromPostal_code}&to_postal_code={model.ToPostal_code}";
+            if (model.Service_point_id.HasValue)
+                query += $"&service_point_id={model.Service_point_id}";
+            var response = await _httpClient.GetAsync(query);
             if (!response.IsSuccessStatusCode)
             {
                 var jsonError = await response.Content.ReadAsStringAsync();
@@ -274,7 +276,8 @@ namespace Shipping.SendCloud.Services
             return new WidgetCloudSettings() {
                 ClientId = settings.ClientId,
                 ClientSecret = settings.ClientSecret,
-                SendCloudUrl = settings.SendCloudUrl
+                SendCloudUrl = settings.SendCloudUrl,
+                ServicePointCloudUrl = settings.ServicePointCloudUrl,
             };
 
         }

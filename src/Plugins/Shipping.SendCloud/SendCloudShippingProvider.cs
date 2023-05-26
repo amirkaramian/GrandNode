@@ -264,16 +264,29 @@ namespace Shipping.SendCloud
             var country = await _countryService.GetCountryById(getShippingOptionRequest.ShippingAddress.CountryId);
             if (country == null)
                 throw new Exception("invalid country");
-
-            var methods = await _shippingSendCloudService.GetShippingMethods(new Models.ShippingMethodModel() {
+            var requestModel = new Models.ShippingMethodModel() {
                 SenderAddress = sender.id,
                 FromPostal_code = sender.postal_code,
                 ToCountry = country.TwoLetterIsoCode,
-                ToPostal_code = getShippingOptionRequest.Customer.Addresses.FirstOrDefault()?.ZipPostalCode
-            });
-            //var countryId = getShippingOptionRequest.CountryFrom.Id;
-            //var shippingMethods = await _shippingMethodService.GetAllShippingMethods(countryId, _workContext.CurrentCustomer);
-            foreach (var shippingMethod in methods.shipping_methods)
+                ToPostal_code = getShippingOptionRequest.Customer.ShippingAddress?.ZipPostalCode
+            };
+            if (_cloudSettings.EnableServicePoint)
+            {
+                var points = await _shippingSendCloudService.GetServicePoint(country.TwoLetterIsoCode, _cloudSettings.Carrier);
+                requestModel.Service_point_id = points.FirstOrDefault(x => x.city == getShippingOptionRequest.Customer.ShippingAddress.City)?.id;
+
+            }
+            var allMethods = await _shippingSendCloudService.GetShippingMethods(requestModel);
+
+            var methods = !_cloudSettings.EnableServicePoint || requestModel.Service_point_id == null ?
+                allMethods.shipping_methods.Where(x => x.service_point_input == "none").ToList() :
+                allMethods.shipping_methods.Where(x => x.service_point_input == "required").ToList();
+            if (methods == null || !methods.Any())
+                throw new Exception("shiping method not found");
+            methods = methods.Where(x => x.carrier.ToLower() == _cloudSettings.Carrier.ToLower()).ToList();
+            if (methods == null || !methods.Any())
+                throw new Exception("shiping method not found");
+            foreach (var shippingMethod in methods)
             {
                 double? rate = null;
                 foreach (var item in getShippingOptionRequest.Items.GroupBy(x => x.ShoppingCartItem.WarehouseId).Select(x => x.Key))
@@ -336,10 +349,12 @@ namespace Shipping.SendCloud
                 ClientId = settings.ClientId,
                 ClientSecret = settings.ClientSecret,
                 SendCloudUrl = settings.SendCloudUrl,
+                ServicePointCloudUrl = settings.ServicePointCloudUrl,
                 Carrier = settings.Carrier,
                 EnablePickup = settings.EnablePickup,
+                EnableServicePoint = settings.EnableServicePoint,
             };
-          
+
 
         }
         #endregion

@@ -64,22 +64,11 @@ namespace Shipping.SendCloud.Controllers
                 ClientSecret = settings.ClientSecret,
                 ServiceName = settings.ServiceName,
                 SendCloudUrl = settings.SendCloudUrl,
+                ServicePointCloudUrl = settings.ServicePointCloudUrl,
                 EnablePickup = settings.EnablePickup,
                 Carrier = settings.Carrier,
+                EnableServicePoint = settings.EnableServicePoint,
             };
-            //if (settings != null && !string.IsNullOrEmpty(settings.ClientId))
-            //{
-            //    var items = await GetCarrier(settings.ClientId, settings.ClientSecret, settings.SendCloudUrl);
-
-            //    foreach (var item in items)
-            //    {
-            //        if (!model.CarrierList.Any(x => x.Value == item))
-            //        {
-            //            model.CarrierList.Add(new SelectListItem() { Text = item, Value = item, Selected = settings == settings });
-            //        }
-            //    }
-            //}
-            //else
             model.CarrierList = new List<SelectListItem>() {//just DHL_express, postat, dpd, dpd_at
                      new SelectListItem(){Text="dhl_express",Value="dhl_express", Selected =settings.Carrier=="dhl_express" },
                  new SelectListItem(){Text="postat",Value="postat", Selected =settings.Carrier=="postat" },
@@ -99,9 +88,10 @@ namespace Shipping.SendCloud.Controllers
             settings.ClientSecret = model.ClientSecret;
             settings.ServiceName = model.ServiceName;
             settings.SendCloudUrl = model.SendCloudUrl;
+            settings.ServicePointCloudUrl = model.ServicePointCloudUrl;
             settings.EnablePickup = model.EnablePickup;
             settings.Carrier = model.Carrier;
-
+            settings.EnableServicePoint = model.EnableServicePoint;
             await _settingService.SaveSetting(settings, storeScope);
 
             //now clear settings cache

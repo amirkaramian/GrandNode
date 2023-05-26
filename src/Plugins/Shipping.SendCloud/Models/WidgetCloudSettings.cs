@@ -12,7 +12,9 @@ namespace Shipping.SendCloud.Models
         public string ClientId { get; set; }
         public string ClientSecret { get; set; }
         public string SendCloudUrl { get; set; }
+        public string ServicePointCloudUrl { get; set; }
         public string ServiceName { get; set; }
         public bool EnablePickup { get; set; }
+        public bool EnableServicePoint { get;  set; }
     }
 }

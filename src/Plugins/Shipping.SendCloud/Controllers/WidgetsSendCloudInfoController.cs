@@ -46,7 +46,9 @@ namespace Shipping.SendCloud.Controllers
                 { "ClientSecret", settings.ClientSecret },
                 { "EnablePickup", settings.EnablePickup.ToString() },
                 { "SendCloudUrl", settings.SendCloudUrl },
+                { "ServicePointCloudUrl",settings.ServicePointCloudUrl },
                 { "ServiceName", settings.ServiceName },
+                {"ServicePointCloudUrl",settings.ServicePointCloudUrl },
             };
             return (true, values);
         }
