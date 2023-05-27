@@ -90,13 +90,12 @@ namespace Shipping.SendCloud
             var shippingSendCloudService = _serviceProvider.GetRequiredService<IShippingSendCloudService>();
             var shippingSendCloudSettings = _serviceProvider.GetRequiredService<SendCloudShippingSettings>();
 
-            var weigth = (await GetWeight()).StartsWith("kg(s)") ? "kilogram" : "gram";
             var request = new ShoppingRateRecord() {
                 FromCountry = countryFrom,
                 ToCountry = countryTo,
-                Weight = (int)Math.Round(weight),
+                Weight = (int)Math.Round(weight) == 0 ? 1 : (int)Math.Round(weight),
                 ShoppingMethodId = shippingMethod.id.ToString(),
-                Weightunit = weigth,
+                Weightunit = "kilogram",
 
             };
             var shippingSendCloudRecord = await shippingSendCloudService.GetRate(request);
@@ -210,7 +209,8 @@ namespace Shipping.SendCloud
                 }
             }
             var weight = await GetWeight();
-            return weight != "lb(s)" ? totalWeight : totalWeight * 453.592;
+            double conversion = weight == "lb(s)" ? 0.453592 : weight == "gram(s)" ? 0.001 : 1;
+            return totalWeight * conversion;
         }
 
         /// <summary>
@@ -292,6 +292,8 @@ namespace Shipping.SendCloud
             foreach (var shippingMethod in methods)
             {
                 double? rate = null;
+                if (weight < shippingMethod.min_weight || weight > shippingMethod.max_weight)
+                    continue;
                 foreach (var item in getShippingOptionRequest.Items.GroupBy(x => x.ShoppingCartItem.WarehouseId).Select(x => x.Key))
                 {
 

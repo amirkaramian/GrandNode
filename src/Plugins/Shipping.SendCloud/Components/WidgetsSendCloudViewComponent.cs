@@ -20,6 +20,9 @@ using Grand.Domain.Directory;
 using Grand.Domain.Shipping;
 using Grand.Domain.Common;
 using StackExchange.Redis;
+using Grand.Business.Core.Interfaces.Catalog.Directory;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Shipping.SendCloud.Components
 {
@@ -36,7 +39,8 @@ namespace Shipping.SendCloud.Components
         private readonly IStoreService _storeService;
         private readonly WidgetCloudSettings _cloudSettings;
         private readonly ICountryService _countryService;
-
+        private readonly IMeasureService _measureService;
+        private readonly MeasureSettings _measureSettings;
         public WidgetsSendCloudViewComponent(
             IWorkContext workContext,
             IOrderService orderService,
@@ -46,7 +50,9 @@ namespace Shipping.SendCloud.Components
              IProductService productService,
              ISettingService settingService,
              IStoreService storeService,
-             ICountryService countryService)
+             ICountryService countryService,
+             IMeasureService measureService,
+             MeasureSettings measureSettings)
         {
             _workContext = workContext;
             _orderService = orderService;
@@ -58,6 +64,8 @@ namespace Shipping.SendCloud.Components
             _storeService = storeService;
             _countryService = countryService;
             _cloudSettings = GetSetting();
+            _measureService = measureService;
+            _measureSettings = measureSettings;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData = null)
@@ -173,12 +181,16 @@ namespace Shipping.SendCloud.Components
             };
             if (points != null && _cloudSettings.EnableServicePoint)
                 parcel.to_service_point = points.FirstOrDefault(x => x.city == _workContext.CurrentCustomer.ShippingAddress.City)?.id;
+            var weight = await GetWeight();
+            double conversion = weight == "lb(s)" ? 0.453592 : weight == "gram(s)" ? 0.001 : 1;
+
+
             foreach (var item in order.OrderItems)
             {
                 var procuct = await _productService.GetProductById(item.ProductId);
                 parcel.parcel_items.Add(new ParcelItem() {
                     quantity = item.Quantity,
-                    weight = procuct.Weight,
+                    weight = Math.Round(procuct.Weight * conversion, 3),
                     description = !string.IsNullOrEmpty(procuct.FullDescription) && procuct.FullDescription.Length > 200 ? procuct.FullDescription.Substring(0, 200) : procuct.Name,
                     value = procuct.Price.ToString(),
                     sku = procuct.Sku ?? "",
@@ -189,7 +201,7 @@ namespace Shipping.SendCloud.Components
                     hs_code = ""
                 });
             }
-            parcel.weight = parcel.parcel_items.Sum(x => x.weight * x.quantity).ToString();
+            parcel.weight = Math.Round(parcel.parcel_items.Sum(x => x.weight * x.quantity), 3).ToString();
             var resp = await _shippingSendCloudService.CreateParcel(new ParcelRecord() { parcel = parcel });
             if (order.UserFields == null)
             {
@@ -271,6 +283,11 @@ namespace Shipping.SendCloud.Components
                 EnablePickup = settings.EnablePickup,
                 EnableServicePoint = settings.EnableServicePoint,
             };
+        }
+
+        private async Task<string> GetWeight()
+        {
+            return (await _measureService.GetMeasureWeightById(_measureSettings.BaseWeightId)).Name;
         }
 
     }
