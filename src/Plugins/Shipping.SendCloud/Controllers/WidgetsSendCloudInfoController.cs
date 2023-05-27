@@ -55,15 +55,16 @@ namespace Shipping.SendCloud.Controllers
         [HttpGet]
         public async Task<IActionResult> GetLabel(string id, string shipmentId)
         {
-            var fileName = await _shippingSendCloudService.GetLabel(id);
-            var bytes = await System.IO.File.ReadAllBytesAsync(fileName);
+            var bytes = await _shippingSendCloudService.GetLabel(id);
             var parcel = await _shippingSendCloudService.GetParcel(id);
             var shipment = await _shipmentService.GetShipmentById(shipmentId);
             if (shipment == null)
                 return RedirectToAction("List");
             shipment.TrackingNumber = parcel.parcel.tracking_number;
             await _shipmentService.UpdateShipment(shipment);
+            var fileName = string.Format("packagingslip_{0}.pdf", id);
             return File(bytes, "application/pdf", fileName);
         }
+      
     }
 }

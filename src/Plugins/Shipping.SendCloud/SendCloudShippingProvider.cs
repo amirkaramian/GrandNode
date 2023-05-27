@@ -27,6 +27,7 @@ using Newtonsoft.Json;
 using Microsoft.AspNetCore.Http;
 using Grand.Business.Core.Interfaces.Common.Configuration;
 using Grand.Business.Core.Interfaces.Common.Stores;
+using Grand.Business.Core.Interfaces.Catalog.Directory;
 
 namespace Shipping.SendCloud
 {
@@ -44,7 +45,6 @@ namespace Shipping.SendCloud
         private readonly SendCloudShippingSettings _SendCloudShippingSettings;
         private readonly IShippingSendCloudService _shippingSendCloudService;
         private readonly WidgetCloudSettings _cloudSettings;
-        private readonly HttpClient _httpClient;
         private readonly ICountryService _countryService;
         private readonly IProductAttributeParser _productAttributeParser;
         private readonly ISettingService _settingService;
@@ -89,12 +89,14 @@ namespace Shipping.SendCloud
 
             var shippingSendCloudService = _serviceProvider.GetRequiredService<IShippingSendCloudService>();
             var shippingSendCloudSettings = _serviceProvider.GetRequiredService<SendCloudShippingSettings>();
+
+            var weigth = (await GetWeight()).StartsWith("kg(s)") ? "kilogram" : "gram";
             var request = new ShoppingRateRecord() {
                 FromCountry = countryFrom,
                 ToCountry = countryTo,
-                Weight = (int)weight,
+                Weight = (int)Math.Round(weight),
                 ShoppingMethodId = shippingMethod.id.ToString(),
-                Weightunit = "kilogram",
+                Weightunit = weigth,
 
             };
             var shippingSendCloudRecord = await shippingSendCloudService.GetRate(request);
@@ -115,7 +117,7 @@ namespace Shipping.SendCloud
             {
                 var weightRate = weight - shippingMethod.min_weight;
                 weightRate = weightRate < 0 ? 0 : weight;
-                shippingTotal = (double)(shippingSendCloudRecord.Price * weightRate);
+                shippingTotal = (double)(shippingSendCloudRecord.Price);// * weightRate);
             }
 
             //percentage rate of subtotal
@@ -207,7 +209,8 @@ namespace Shipping.SendCloud
                         totalWeight += attributeValue.WeightAdjustment;
                 }
             }
-            return totalWeight;
+            var weight = await GetWeight();
+            return weight != "lb(s)" ? totalWeight : totalWeight * 453.592;
         }
 
         /// <summary>
@@ -402,7 +405,12 @@ namespace Shipping.SendCloud
         {
             return await Task.FromResult("");
         }
-
+        private async Task<string> GetWeight()
+        {
+            var measureService = _serviceProvider.GetRequiredService<IMeasureService>();
+            var measureSettings = _serviceProvider.GetRequiredService<MeasureSettings>();
+            return (await measureService.GetMeasureWeightById(measureSettings.BaseWeightId)).Name;
+        }
         #endregion
     }
 

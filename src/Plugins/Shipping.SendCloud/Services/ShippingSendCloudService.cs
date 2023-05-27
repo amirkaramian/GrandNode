@@ -281,7 +281,7 @@ namespace Shipping.SendCloud.Services
             };
 
         }
-        public virtual async Task<string> GetLabel(string lableId)
+        public virtual async Task<byte[]> GetLabel(string lableId)
         {
             var response = await _httpClient.GetAsync($"labels/label_printer/{lableId}");
             if (!response.IsSuccessStatusCode)
@@ -292,13 +292,12 @@ namespace Shipping.SendCloud.Services
             }
             response.EnsureSuccessStatusCode();
 
-            await response.Content.ReadAsStringAsync();
-            var fileName = string.Format("packagingslip_{0}.pdf", lableId);
-            using (var file = System.IO.File.Create(fileName))
-            { // create a new file to write to
-
-                await response.Content.CopyToAsync(file);
-                return fileName;
+            //await response.Content.ReadAsStringAsync();
+           
+            using (var stream = new MemoryStream())
+            {
+                await response.Content.CopyToAsync(stream);
+                return stream.ToArray();
             }
 
         }

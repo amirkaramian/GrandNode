@@ -179,7 +179,7 @@ namespace Shipping.SendCloud.Components
                 parcel.parcel_items.Add(new ParcelItem() {
                     quantity = item.Quantity,
                     weight = procuct.Weight,
-                    description = !string.IsNullOrEmpty(procuct.FullDescription) ? procuct.FullDescription.Substring(0, 200) : procuct.Name,
+                    description = !string.IsNullOrEmpty(procuct.FullDescription) && procuct.FullDescription.Length > 200 ? procuct.FullDescription.Substring(0, 200) : procuct.Name,
                     value = procuct.Price.ToString(),
                     sku = procuct.Sku ?? "",
                     product_id = procuct.Id,
