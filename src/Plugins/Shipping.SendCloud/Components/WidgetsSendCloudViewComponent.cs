@@ -23,6 +23,8 @@ using StackExchange.Redis;
 using Grand.Business.Core.Interfaces.Catalog.Directory;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Grand.Business.Core.Interfaces.Common.Logging;
+using Grand.Business.Core.Extensions;
 
 namespace Shipping.SendCloud.Components
 {
@@ -41,6 +43,7 @@ namespace Shipping.SendCloud.Components
         private readonly ICountryService _countryService;
         private readonly IMeasureService _measureService;
         private readonly MeasureSettings _measureSettings;
+        private readonly ILogger _logger;
         public WidgetsSendCloudViewComponent(
             IWorkContext workContext,
             IOrderService orderService,
@@ -52,7 +55,8 @@ namespace Shipping.SendCloud.Components
              IStoreService storeService,
              ICountryService countryService,
              IMeasureService measureService,
-             MeasureSettings measureSettings)
+             MeasureSettings measureSettings,
+             ILogger logger)
         {
             _workContext = workContext;
             _orderService = orderService;
@@ -66,6 +70,7 @@ namespace Shipping.SendCloud.Components
             _cloudSettings = GetSetting();
             _measureService = measureService;
             _measureSettings = measureSettings;
+            _logger = logger;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData = null)
@@ -107,6 +112,7 @@ namespace Shipping.SendCloud.Components
             }
             catch (Exception ex)
             {
+                await _logger.Error(ex.Message, ex);
                 return Content(ex.Message);
             }
             return Content("");
@@ -201,7 +207,7 @@ namespace Shipping.SendCloud.Components
                     hs_code = ""
                 });
             }
-            parcel.weight = Math.Round(parcel.parcel_items.Sum(x => x.weight * x.quantity), 3).ToString();
+            parcel.weight = Math.Round(parcel.parcel_items.Sum(x => x.weight * x.quantity), 3).ToString().Replace(",", ".");
             var resp = await _shippingSendCloudService.CreateParcel(new ParcelRecord() { parcel = parcel });
             if (order.UserFields == null)
             {
@@ -212,6 +218,7 @@ namespace Shipping.SendCloud.Components
                 StoreId = order.StoreId,
                 Value = JsonConvert.SerializeObject(resp)
             });
+
             await _orderService.UpdateOrder(order);
             return resp;
         }
@@ -235,6 +242,7 @@ namespace Shipping.SendCloud.Components
                     StoreId = order.StoreId,
                     Value = JsonConvert.SerializeObject(resp)
                 });
+
             return resp;
         }
         public async Task<PickupRecord> CreatePickUpRequest(Grand.Domain.Orders.Order order, string countrycode)
