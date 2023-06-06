@@ -198,7 +198,7 @@ namespace Shipping.SendCloud.Components
                     quantity = item.Quantity,
                     weight = Math.Round(procuct.Weight * conversion, 3),
                     description = !string.IsNullOrEmpty(procuct.FullDescription) && procuct.FullDescription.Length > 200 ? procuct.FullDescription.Substring(0, 200) : procuct.Name,
-                    value = procuct.Price.ToString(),
+                    value = procuct.Price.ToString("F2", CultureInfo.InvariantCulture),
                     sku = procuct.Sku ?? "",
                     product_id = procuct.Id,
                     properties = new Properties() {
@@ -207,7 +207,7 @@ namespace Shipping.SendCloud.Components
                     hs_code = ""
                 });
             }
-            parcel.weight = Math.Round(parcel.parcel_items.Sum(x => x.weight * x.quantity), 3).ToString().Replace(",", ".");
+            parcel.weight = Math.Round(parcel.parcel_items.Sum(x => x.weight * x.quantity), 3).ToString("F2", CultureInfo.InvariantCulture);
             var resp = await _shippingSendCloudService.CreateParcel(new ParcelRecord() { parcel = parcel });
             if (order.UserFields == null)
             {
