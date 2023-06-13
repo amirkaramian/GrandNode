@@ -77,7 +77,7 @@ namespace Shipping.SendCloud.Components
         {
             try
             {
-
+                await _logger.Information("InvokeAsync SendCloud");
                 if (_settings.EnablePickup)
                 {
                     var enabled = await _cookiePreference.IsEnable(_workContext.CurrentCustomer, _workContext.CurrentStore, SendCloudDefaults.ConsentCookieSystemName);
@@ -101,11 +101,13 @@ namespace Shipping.SendCloud.Components
                         return View("Default", "");
                     }
                 }
+                await _logger.Information("before widgetZone == SendCloudDefaults.ShipingMethod");
                 if (widgetZone == SendCloudDefaults.ShipingMethod)
                 {
                     var orderId = additionalData as string;
                     if (!string.IsNullOrEmpty(orderId))
                     {
+                        await _logger.Information("before ProcessOrder");
                         return View("Default", await ProcessOrder(orderId));
                     }
                 }
@@ -145,9 +147,11 @@ namespace Shipping.SendCloud.Components
                 var method = await _shippingSendCloudService.GetOrSet(0, order.ShippingMethod);
                 if (method == null || method.Id == "0")
                     return "";
+                await _logger.Information("before CreateParcel");
                 var parcel = await CreateParcel(order, countryLetter, int.Parse(method.Id));
-
+                await _logger.Information($"parcel {JsonConvert.SerializeObject(parcel.parcel)}");
                 var lable = await CreateLable(order, parcel.parcel.id, int.Parse(method.Id), order.ShippingMethod);
+                await _logger.Information($"lable {JsonConvert.SerializeObject(lable.parcel)}");
                 if (_cloudSettings.EnablePickup)
                 {
                     var pickUp = CreatePickUpRequest(order, country.TwoLetterIsoCode);
@@ -162,17 +166,17 @@ namespace Shipping.SendCloud.Components
             var points = await _shippingSendCloudService.GetServicePoint(countryLetter, _cloudSettings.Carrier);
             var parcel = new Parcel() {
                 name = _workContext.CurrentCustomer.GetFullName(),
-                company_name = senderAddresses.sender_addresses.FirstOrDefault().company_name,
+                company_name = _workContext.CurrentCustomer.ShippingAddress.Company ?? "",
                 email = _workContext.CurrentCustomer.Email,
                 telephone = _workContext.CurrentCustomer.ShippingAddress.PhoneNumber ?? "",
                 address = _workContext.CurrentCustomer.ShippingAddress.Address1 ?? "",
                 address_2 = string.IsNullOrEmpty(_workContext.CurrentCustomer.ShippingAddress.Address2) ? string.Empty : _workContext.CurrentCustomer.ShippingAddress.Address2,
-                house_number = "1",
+                house_number = "-",
                 city = _workContext.CurrentCustomer.ShippingAddress.City ?? "",
                 country = countryLetter,
                 postal_code = _workContext.CurrentCustomer.ShippingAddress.ZipPostalCode,
                 to_post_number = _workContext.CurrentCustomer.ShippingAddress.ZipPostalCode,
-                customs_invoice_nr = "",
+                customs_invoice_nr = order.OrderNumber.ToString(),
                 customs_shipment_type = null,
                 country_state = null,
                 parcel_items = new List<Domain.ParcelItem>(),
@@ -189,7 +193,7 @@ namespace Shipping.SendCloud.Components
                 parcel.to_service_point = points.FirstOrDefault(x => x.city == _workContext.CurrentCustomer.ShippingAddress.City)?.id;
             var weight = await GetWeight();
             double conversion = weight == "lb(s)" ? 0.453592 : weight == "gram(s)" ? 0.001 : 1;
-
+            await _logger.Information(string.Format("s1 parcel {0}", JsonConvert.SerializeObject(parcel)));
 
             foreach (var item in order.OrderItems)
             {
@@ -197,18 +201,20 @@ namespace Shipping.SendCloud.Components
                 parcel.parcel_items.Add(new ParcelItem() {
                     quantity = item.Quantity,
                     weight = Math.Round(procuct.Weight * conversion, 3),
-                    description = !string.IsNullOrEmpty(procuct.FullDescription) && procuct.FullDescription.Length > 200 ? procuct.FullDescription.Substring(0, 200) : procuct.Name,
+                    description = !string.IsNullOrEmpty(procuct.Name) && procuct.Name.Length > 200 ? procuct.Name.Substring(0, 200) : procuct.Name,
                     value = procuct.Price.ToString("F2", CultureInfo.InvariantCulture),
-                    sku = procuct.Sku ?? "",
+                    sku = procuct.Sku ?? "not set",
                     product_id = procuct.Id,
                     properties = new Properties() {
-                        size = (procuct.Width * procuct.Height).ToString(),
+                        size = (procuct.Width * procuct.Height).ToString("F2", CultureInfo.InvariantCulture),
                     },
                     hs_code = ""
                 });
             }
             parcel.weight = Math.Round(parcel.parcel_items.Sum(x => x.weight * x.quantity), 3).ToString("F2", CultureInfo.InvariantCulture);
+            await _logger.Information(string.Format("s2 parcel {0}", JsonConvert.SerializeObject(parcel)));
             var resp = await _shippingSendCloudService.CreateParcel(new ParcelRecord() { parcel = parcel });
+            await _logger.Information(string.Format("s2 order.UserFields == null {0}", order.UserFields == null));
             if (order.UserFields == null)
             {
                 order.UserFields = new List<UserField>();
