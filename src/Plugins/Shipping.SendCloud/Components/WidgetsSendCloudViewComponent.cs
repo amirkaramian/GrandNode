@@ -198,6 +198,7 @@ namespace Shipping.SendCloud.Components
             foreach (var item in order.OrderItems)
             {
                 var procuct = await _productService.GetProductById(item.ProductId);
+                if (procuct.IsFreeShipping) continue;
                 parcel.parcel_items.Add(new ParcelItem() {
                     quantity = item.Quantity,
                     weight = Math.Round(procuct.Weight * conversion, 3),

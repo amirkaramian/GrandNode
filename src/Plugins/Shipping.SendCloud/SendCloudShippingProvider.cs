@@ -91,7 +91,7 @@ namespace Shipping.SendCloud
             var request = new ShoppingRateRecord() {
                 FromCountry = countryFrom,
                 ToCountry = countryTo,
-                Weight = (int)Math.Round(weight) == 0 ? 1 : (int)Math.Floor(weight),
+                Weight = (int)Math.Round(weight) == 0 ? 1 : (int)Math.Round(weight),
                 ShoppingMethodId = shippingMethod.id.ToString(),
                 Weightunit = "kilogram",
 
@@ -291,6 +291,7 @@ namespace Shipping.SendCloud
                 double? rate = null;
                 if (weight < shippingMethod.min_weight || weight > shippingMethod.max_weight)
                     continue;
+                weight = (shippingMethod.min_weight + shippingMethod.max_weight) / 2;
                 foreach (var item in getShippingOptionRequest.Items.GroupBy(x => x.ShoppingCartItem.WarehouseId).Select(x => x.Key))
                 {
 
