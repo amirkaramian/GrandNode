@@ -16,18 +16,16 @@ using Grand.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Shipping.SendCloud.Services;
 using Grand.Domain.Directory;
-using Grand.Domain.Data;
 using Shipping.SendCloud.Domain;
 using Shipping.SendCloud.Models;
-using DotLiquid.Util;
-using System.Net;
-using Microsoft.Extensions.Configuration;
-using System.Net.Http;
-using Newtonsoft.Json;
 using Microsoft.AspNetCore.Http;
 using Grand.Business.Core.Interfaces.Common.Configuration;
 using Grand.Business.Core.Interfaces.Common.Stores;
 using Grand.Business.Core.Interfaces.Catalog.Directory;
+using Grand.Business.Core.Interfaces.Common.Logging;
+using MongoDB.Bson.IO;
+using Newtonsoft.Json;
+using StackExchange.Redis;
 
 namespace Shipping.SendCloud
 {
@@ -35,7 +33,7 @@ namespace Shipping.SendCloud
     {
         #region Fields
 
-        private readonly IShippingMethodService _shippingMethodService;
+        private readonly ILogger _logger;
         private readonly IWorkContext _workContext;
         private readonly IServiceProvider _serviceProvider;
         private readonly ITranslationService _translationService;
@@ -53,7 +51,7 @@ namespace Shipping.SendCloud
 
         #region Ctor
         public SendCloudShippingCalcPlugin(
-            IShippingMethodService shippingMethodService,
+            ILogger logger,
             IWorkContext workContext,
             ITranslationService translationService,
             IProductService productService,
@@ -65,7 +63,7 @@ namespace Shipping.SendCloud
            ISettingService settingService, IStoreService storeService,
             ICountryService countryService, IProductAttributeParser productAttributeParser)
         {
-            _shippingMethodService = shippingMethodService;
+            _logger = logger;
             _workContext = workContext;
             _translationService = translationService;
             _productService = productService;
@@ -93,7 +91,7 @@ namespace Shipping.SendCloud
             var request = new ShoppingRateRecord() {
                 FromCountry = countryFrom,
                 ToCountry = countryTo,
-                Weight = (int)Math.Round(weight) == 0 ? 1 : (int)Math.Round(weight),
+                Weight = (int)Math.Round(weight) == 0 ? 1 : (int)Math.Floor(weight),
                 ShoppingMethodId = shippingMethod.id.ToString(),
                 Weightunit = "kilogram",
 
@@ -280,7 +278,6 @@ namespace Shipping.SendCloud
 
             }
             var allMethods = await _shippingSendCloudService.GetShippingMethods(requestModel);
-
             var methods = !_cloudSettings.EnableServicePoint || requestModel.Service_point_id == null ?
                 allMethods.shipping_methods.Where(x => x.service_point_input == "none").ToList() :
                 allMethods.shipping_methods.Where(x => x.service_point_input == "required").ToList();

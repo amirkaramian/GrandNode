@@ -140,9 +140,9 @@ namespace Shipping.SendCloud.Components
         {
 
             var order = await _orderService.GetOrderById(orderId);
-            if (order != null)
+            if (order != null && order.ShippingAddress != null)
             {
-                var country = await _countryService.GetCountryById(_workContext.CurrentCustomer.ShippingAddress.CountryId);
+                var country = await _countryService.GetCountryById(order.ShippingAddress.CountryId);// _workContext.CurrentCustomer.ShippingAddress.CountryId);
                 string countryLetter = country.TwoLetterIsoCode;
                 var method = await _shippingSendCloudService.GetOrSet(0, order.ShippingMethod);
                 if (method == null || method.Id == "0")
