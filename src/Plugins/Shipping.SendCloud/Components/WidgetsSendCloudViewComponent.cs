@@ -182,7 +182,6 @@ namespace Shipping.SendCloud.Components
                 parcel_items = new List<Domain.ParcelItem>(),
                 sender_address = senderAddresses.sender_addresses.FirstOrDefault().id,
                 shipment = new Domain.Shipment() { id = shippingMethodId, name = order.ShippingMethod },
-                quantity = order.OrderItems.Sum(x => x.Quantity),
                 total_insured_value = 0,
                 is_return = false,
                 request_label = false,
@@ -194,11 +193,16 @@ namespace Shipping.SendCloud.Components
             var weight = await GetWeight();
             double conversion = weight == "lb(s)" ? 0.453592 : weight == "gram(s)" ? 0.001 : 1;
             await _logger.Information(string.Format("s1 parcel {0}", JsonConvert.SerializeObject(parcel)));
-
+            int weightMinus = 0;
             foreach (var item in order.OrderItems)
             {
                 var procuct = await _productService.GetProductById(item.ProductId);
-                if (procuct.IsFreeShipping) continue;
+                if (!procuct.IsShipEnabled)
+                {
+                    weightMinus += item.Quantity;
+                    continue;
+                }
+
                 parcel.parcel_items.Add(new ParcelItem() {
                     quantity = item.Quantity,
                     weight = Math.Round(procuct.Weight * conversion, 3),
@@ -212,6 +216,7 @@ namespace Shipping.SendCloud.Components
                     hs_code = ""
                 });
             }
+            parcel.quantity = order.OrderItems.Sum(x => x.Quantity) - weightMinus;
             parcel.weight = Math.Round(parcel.parcel_items.Sum(x => x.weight * x.quantity), 3).ToString("F2", CultureInfo.InvariantCulture);
             await _logger.Information(string.Format("s2 parcel {0}", JsonConvert.SerializeObject(parcel)));
             var resp = await _shippingSendCloudService.CreateParcel(new ParcelRecord() { parcel = parcel });
