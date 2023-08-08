@@ -186,7 +186,8 @@ namespace Shipping.SendCloud.Components
                 is_return = false,
                 request_label = false,
                 apply_shipping_rules = false,
-                request_label_async = false
+                request_label_async = false,
+                order_number = order.OrderNumber.ToString(),
             };
             if (points != null && _cloudSettings.EnableServicePoint)
                 parcel.to_service_point = points.FirstOrDefault(x => x.city == _workContext.CurrentCustomer.ShippingAddress.City)?.id;
